@@ -1,0 +1,8 @@
+{
+  "name": "The Yard x Sunday Theory Operating System",
+  "description": "An all-in-one task tracking, email management, and workforce presence platform featuring AI-driven reminders, ground staff shift scheduling, and automated forced-break lockout logic for employee wellness.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
