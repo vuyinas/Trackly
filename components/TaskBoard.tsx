@@ -562,8 +562,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
         className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 mt-8"
       >
         {editingId ? 'Save Configuration' : 'Deploy Objective'} <Zap size={24} fill="currentColor" />
-      </button>
+    </button>
     </form>
   </div>
-)}
-export default taskboard:
+  ) // closes any wrapping parentheses for conditional or return
+}
+
+export default TaskBoard;
