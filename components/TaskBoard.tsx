@@ -203,7 +203,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
           <div key={col.status} className="flex flex-col gap-6">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
-                <div className={w-3 h-3 rounded-full ${col.color}} />
+                <div className={`w-3 h-3 rounded-full ${col.color}} />
                 <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 italic">{col.title}</h3>
                 <span className="bg-white border border-slate-100 px-3 py-1 rounded-lg text-[10px] font-black text-slate-400">
                   {filteredTasks.filter(t => t.status === col.status).length}
