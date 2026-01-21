@@ -597,33 +597,16 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
                       <option value="medium">Medium</option>
                       <option value="high">High</option>
                       <option value="critical">Critical</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Target Date</label>
-                    <input 
-                      type="date" 
-                      required
-                      className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-xs"
-                      value={formData.dueDate}
-                      onChange={e => setFormData({...formData, dueDate: e.target.value})}
-                    />
-                  </div>
+                    </div>
                 </div>
-              </div>
 
-              {/* Submit button */}
-              <button
-                type="submit"
-                className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 mt-8"
-              >
-                {editingId ? 'Save Configuration' : 'Deploy Objective'} <Zap size={24} fill="currentColor" />
-              </button>
-            </form>
-          </div> {/* closes the modal container div */}
-        )} {/* closes the modal conditional */}
-</div>
-) // closes any wrapping parentheses for conditional or return
-}
-
-export default TaskBoard;
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 mt-8"
+                >
+                  {editingId ? 'Save Configuration' : 'Deploy Objective'} <Zap size={24} fill="currentColor" />
+                </button>
+              </form>
+            </div> {/* modal container */}
+          )} {/* conditional render */}
