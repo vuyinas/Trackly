@@ -550,20 +550,78 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
 
 {editingId && (
   <div className="mt-6">
-    <form onSubmit={handleSubmit}>
-      {/* your form fields go here */}
-    </form>
-  </div>
-)}
-     {/* your form fields go here */}
+  <form onSubmit={handleSubmit} className="p-10 space-y-8 overflow-y-auto max-h-[75vh] custom-scrollbar">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Task Title</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Pre-event Technical Inspection"
+                      className="w-full px-8 py-5 bg-slate-50 rounded-[25px] border-2 border-transparent focus:border-brand-primary outline-none font-bold text-lg"
+                      value={formData.title}
+                      onChange={e => setFormData({...formData, title: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Basic Scope</label>
+                    <textarea 
+                      placeholder="Essential breakdown of work required..."
+                      className="w-full px-8 py-5 bg-slate-50 rounded-[25px] border-2 border-transparent focus:border-brand-primary outline-none font-medium text-sm min-h-[100px] resize-none"
+                      value={formData.description}
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Objective Context (Where?)</label>
+                    <select 
+                      className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-black text-[10px] uppercase tracking-widest outline-none border-2 border-transparent focus:border-brand-primary"
+                      value={formData.context}
+                      onChange={e => setFormData({...formData, context: e.target.value as ProjectContext})}
+                    >
+                      <option value={ProjectContext.THE_YARD}>The Yard</option>
+                      <option value={ProjectContext.SUNDAY_THEORY}>Sunday Theory</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Priority</label>
+                    <select 
+                      className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-black text-[10px] uppercase tracking-widest outline-none border-2 border-transparent focus:border-brand-primary"
+                      value={formData.priority}
+                      onChange={e => setFormData({...formData, priority: e.target.value as any})}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Target Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-xs"
+                      value={formData.dueDate}
+                      onChange={e => setFormData({...formData, dueDate: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
 
-  <button 
-    type="submit"
-    className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 mt-8"
-  >
-    {editingId ? 'Save Configuration' : 'Deploy Objective'} <Zap size={24} fill="currentColor" />
-  </button>
-</form>
+              {/* Submit button */}
+              <button
+                type="submit"
+                className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 mt-8"
+              >
+                {editingId ? 'Save Configuration' : 'Deploy Objective'} <Zap size={24} fill="currentColor" />
+              </button>
+            </form>
+          </div> {/* closes the modal container div */}
+        )} {/* closes the modal conditional */}
 </div>
 ) // closes any wrapping parentheses for conditional or return
 }
