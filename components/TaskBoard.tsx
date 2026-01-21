@@ -566,6 +566,3 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
     </form>
   </div>
 )}
-};
-
-export default TaskBoard;
