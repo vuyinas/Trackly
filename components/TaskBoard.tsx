@@ -317,16 +317,17 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
                       >
                          {col.status === TaskStatus.TODO ? <Play size={12} fill="currentColor" /> : <CheckCircle2 size={12} />}
                          {col.actionLabel}
-                         <ArrowRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                        <ArrowRight
+  size={12}
+  className="group-hover/btn:translate-x-1 transition-transform"
+/>
+</button>
+))}
+</div>
+))}
+</div>
+))}
+</div>
 
       {/* Cross-Context Audit Section (What's been done where) */}
       <div className="space-y-8 pt-12 border-t border-slate-200">
