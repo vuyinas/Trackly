@@ -587,17 +587,31 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Priority</label>
-                    <select 
-                      className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-black text-[10px] uppercase tracking-widest outline-none border-2 border-transparent focus:border-brand-primary"
-                      value={formData.priority}
-                      onChange={e => setFormData({...formData, priority: e.target.value as any})}
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </div>
+                  <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Priority</label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-xs"
+                    required
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Target Date</label>
+                  <input 
+                    type="date" 
+                    required
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-xs"
+                    value={formData.dueDate}
+                    onChange={e => setFormData({...formData, dueDate: e.target.value})}
+                  />
                 </div>
 
                 {/* Submit button */}
