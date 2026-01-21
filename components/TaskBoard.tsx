@@ -321,7 +321,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, team, events, menu, contex
                       </button>
                     )}
                   </div>
-                )})}
+                ))}
               )}
             </div>
           </div>
