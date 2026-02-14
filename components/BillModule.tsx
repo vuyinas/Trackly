@@ -1,20 +1,22 @@
 
 import React, { useState, useMemo } from 'react';
-import { Order, ProjectContext } from '../types';
-import { Printer, Receipt, Clock, MapPin, ChevronRight, X, CreditCard, Banknote, ShieldCheck, TrendingUp, ShoppingBag, CheckCircle2, DollarSign } from 'lucide-react';
+import { Order, ProjectContext, Business } from '../types';
+import { Printer, Receipt, Clock, MapPin, ChevronRight, X, CreditCard, Banknote, ShieldCheck, TrendingUp, ShoppingBag, CheckCircle2, DollarSign, Wallet } from 'lucide-react';
 
 interface BillModuleProps {
   orders: Order[];
   context: ProjectContext;
-  onUpdateStatus: (id: string, status: Order['status']) => void;
+  activeBusiness: Business;
+  onUpdateStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card') => void;
 }
 
-const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus }) => {
+const BillModule: React.FC<BillModuleProps> = ({ orders, context, activeBusiness, onUpdateStatus }) => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'card' | null>(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Logic for daily stats
+  // Logic for daily stats and tallies
   const stats = useMemo(() => {
     const todayOrders = orders.filter(o => 
       o.context === context && 
@@ -25,9 +27,12 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
     const pending = todayOrders.filter(o => o.status === 'pending' || o.status === 'preparing').length;
     const received = todayOrders.filter(o => o.status === 'ready' || o.status === 'delivered').length;
     const paid = todayOrders.filter(o => o.status === 'paid');
-    const revenue = paid.reduce((sum, o) => sum + o.total, 0);
+    
+    const cashTotal = paid.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + o.total, 0);
+    const cardTotal = paid.filter(o => o.paymentMethod === 'card').reduce((sum, o) => sum + o.total, 0);
+    const revenue = cashTotal + cardTotal;
 
-    return { total, pending, received, paidCount: paid.length, revenue };
+    return { total, pending, received, paidCount: paid.length, revenue, cashTotal, cardTotal };
   }, [orders, context, todayStr]);
 
   const activeBills = useMemo(() => {
@@ -42,20 +47,27 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
     window.print();
   };
 
+  const handleSettle = () => {
+    if (!selectedOrder || !selectedPaymentMethod) return;
+    onUpdateStatus(selectedOrder.id, 'paid', selectedPaymentMethod);
+    setSelectedOrderId(null);
+    setSelectedPaymentMethod(null);
+  };
+
   return (
     <div className="p-12 space-y-12 animate-in fade-in duration-500">
       {/* Header Section */}
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-4">Billing Hub</h2>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Consolidated table accounts and guest checks.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Consolidated table accounts and guest checks for {activeBusiness?.name}.</p>
         </div>
         <div className="bg-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 border border-slate-200">
           Real-time Audit Active
         </div>
       </div>
 
-      {/* Shift Performance Registry */}
+      {/* Shift Performance Registry & Payment Tallies */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <div className="bg-white p-8 rounded-[40px] shadow-xl shadow-black/5 border border-white/50 flex flex-col justify-between hover:scale-[1.02] transition-transform">
           <div>
@@ -70,24 +82,24 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
 
         <div className="bg-white p-8 rounded-[40px] shadow-xl shadow-black/5 border border-white/50 flex flex-col justify-between hover:scale-[1.02] transition-transform">
           <div>
-            <div className="p-3 bg-amber-50 w-fit rounded-2xl mb-4 text-amber-500">
-              <Clock size={20} />
+            <div className="p-3 bg-emerald-50 w-fit rounded-2xl mb-4 text-emerald-600">
+              <Banknote size={20} />
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Kitchen</p>
-            <h3 className="text-4xl font-black text-slate-800 italic tracking-tighter">{stats.pending}</h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cash In Drawer</p>
+            <h3 className="text-4xl font-black text-emerald-600 italic tracking-tighter">R{stats.cashTotal.toLocaleString()}</h3>
           </div>
-          <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mt-4">Active prep queue</p>
+          <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest mt-4">Manual reconciliation target</p>
         </div>
 
         <div className="bg-white p-8 rounded-[40px] shadow-xl shadow-black/5 border border-white/50 flex flex-col justify-between hover:scale-[1.02] transition-transform">
           <div>
             <div className="p-3 bg-indigo-50 w-fit rounded-2xl mb-4 text-indigo-500">
-              <MapPin size={20} />
+              <CreditCard size={20} />
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Received / Active</p>
-            <h3 className="text-4xl font-black text-slate-800 italic tracking-tighter">{stats.received}</h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Card Terminal Tally</p>
+            <h3 className="text-4xl font-black text-indigo-500 italic tracking-tighter">R{stats.cardTotal.toLocaleString()}</h3>
           </div>
-          <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-4">On floor / waiting settlement</p>
+          <p className="text-[9px] font-bold text-indigo-600/60 uppercase tracking-widest mt-4">Sync with bank statement</p>
         </div>
 
         <div className="bg-[#1A1A1A] p-8 rounded-[40px] shadow-2xl text-white flex flex-col justify-between hover:scale-[1.02] transition-transform relative overflow-hidden group">
@@ -98,10 +110,10 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
             <div className="p-3 bg-brand-primary/20 w-fit rounded-2xl mb-4 text-brand-primary">
               <CheckCircle2 size={20} />
             </div>
-            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Settled Accounts</p>
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Total Revenue</p>
             <h3 className="text-4xl font-black text-brand-primary italic tracking-tighter">R{stats.revenue.toLocaleString()}</h3>
           </div>
-          <p className="text-[9px] font-bold text-brand-primary uppercase tracking-widest mt-4 relative z-10">{stats.paidCount} tickets paid</p>
+          <p className="text-[9px] font-bold text-brand-primary uppercase tracking-widest mt-4 relative z-10">{stats.paidCount} total settlements</p>
         </div>
       </div>
 
@@ -169,14 +181,14 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
                     <h3 className="text-xl font-black italic tracking-tighter uppercase text-slate-800">Guest Check</h3>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reference: {selectedOrder.id}</p>
                   </div>
-                  <button onClick={() => setSelectedOrderId(null)} className="p-2 text-slate-300 hover:text-slate-600 print:hidden">
+                  <button onClick={() => { setSelectedOrderId(null); setSelectedPaymentMethod(null); }} className="p-2 text-slate-300 hover:text-slate-600 print:hidden">
                     <X size={20} />
                   </button>
                </div>
 
                <div className="flex-1 overflow-y-auto p-8 font-mono text-xs space-y-6">
                   <div className="text-center space-y-1 mb-8">
-                     <h2 className="text-lg font-black tracking-tighter uppercase italic">{context === ProjectContext.THE_YARD ? 'The Yard on Herschel' : 'Sunday Theory'}</h2>
+                     <h2 className="text-lg font-black tracking-tighter uppercase italic">{activeBusiness?.name}</h2>
                      <p className="text-slate-400">VAT REG: 4920192384</p>
                      <p className="text-slate-400">{new Date(selectedOrder.timestamp).toLocaleString()}</p>
                   </div>
@@ -218,7 +230,7 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
 
                   <div className="text-center pt-8 opacity-40 italic">
                      <p>Service charge not included.</p>
-                     <p>Thank you for visiting {context === ProjectContext.THE_YARD ? 'The Yard' : 'Sunday Theory'}!</p>
+                     <p>Thank you for visiting {activeBusiness?.name}!</p>
                   </div>
                </div>
 
@@ -229,21 +241,34 @@ const BillModule: React.FC<BillModuleProps> = ({ orders, context, onUpdateStatus
                   >
                     <Printer size={18} /> Print Guest Copy
                   </button>
-                  <div className="grid grid-cols-2 gap-4">
-                     <button 
-                      onClick={() => {
-                        onUpdateStatus(selectedOrder.id, 'paid');
-                        setSelectedOrderId(null);
-                      }}
-                      className="py-3 bg-emerald-500 text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-                     >
-                       <ShieldCheck size={14} /> Close & Pay
-                     </button>
-                     <div className="flex gap-2">
-                        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400"><CreditCard size={14} /></div>
-                        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400"><Banknote size={14} /></div>
-                     </div>
+                  
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Payment Method</p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button 
+                          onClick={() => setSelectedPaymentMethod('card')}
+                          className={`py-4 rounded-xl flex flex-col items-center justify-center gap-2 border-2 transition-all ${selectedPaymentMethod === 'card' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-400'}`}
+                        >
+                           <CreditCard size={24} />
+                           <span className="text-[10px] font-black uppercase tracking-widest">Card</span>
+                        </button>
+                        <button 
+                          onClick={() => setSelectedPaymentMethod('cash')}
+                          className={`py-4 rounded-xl flex flex-col items-center justify-center gap-2 border-2 transition-all ${selectedPaymentMethod === 'cash' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-400'}`}
+                        >
+                           <Wallet size={24} />
+                           <span className="text-[10px] font-black uppercase tracking-widest">Cash</span>
+                        </button>
+                    </div>
                   </div>
+
+                  <button 
+                    onClick={handleSettle}
+                    disabled={!selectedPaymentMethod}
+                    className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
+                   >
+                     <ShieldCheck size={18} /> Settle Account
+                   </button>
                </div>
             </div>
           ) : (

@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { ProjectContext, Event, Meeting, TeamMember, RecurrenceType } from '../types';
 import { ChevronLeft, ChevronRight, Clock, Plus, Zap, X, Save, Coffee, Users2, Repeat, Trash2, Flag, Heart, Cake, Gift } from 'lucide-react';
+import { DatePicker, TimePicker } from './CustomInputs';
 
 interface CalendarModuleProps {
   events: Event[];
@@ -16,103 +17,34 @@ interface CalendarModuleProps {
 
 type HolidayType = 'official' | 'observed' | 'cultural' | 'birthday' | 'wellness';
 
-/**
- * 🇿🇦 EXHAUSTIVE SOUTH AFRICAN CALENDAR REGISTRY (2024 - 2027)
- * Strictly synchronized with national gazette observations.
- */
+// UPDATED FOR 2026
 const SA_HOLIDAYS: Record<string, { name: string; type: HolidayType }> = {
-  // --- 2024 ---
-  "2024-01-01": { name: "New Year's Day", type: 'official' },
-  "2024-02-14": { name: "Valentine's Day", type: 'cultural' },
-  "2024-03-21": { name: "Human Rights Day", type: 'official' },
-  "2024-03-29": { name: "Good Friday", type: 'official' },
-  "2024-04-01": { name: "Family Day", type: 'official' },
-  "2024-04-27": { name: "Freedom Day", type: 'official' },
-  "2024-05-01": { name: "Workers' Day", type: 'official' },
-  "2024-05-12": { name: "Mother's Day", type: 'cultural' },
-  "2024-06-16": { name: "Youth Day", type: 'official' },
-  "2024-06-17": { name: "Youth Day (Observed)", type: 'observed' },
-  "2024-08-09": { name: "National Women's Day", type: 'official' },
-  "2024-09-01": { name: "Spring Day", type: 'cultural' },
-  "2024-09-24": { name: "Heritage Day", type: 'official' },
-  "2024-10-31": { name: "Halloween", type: 'cultural' },
-  "2024-12-16": { name: "Day of Reconciliation", type: 'official' },
-  "2024-12-25": { name: "Christmas Day", type: 'official' },
-  "2024-12-26": { name: "Day of Goodwill", type: 'official' },
-
-  // --- 2025 ---
-  "2025-01-01": { name: "New Year's Day", type: 'official' },
-  "2025-02-14": { name: "Valentine's Day", type: 'cultural' },
-  "2025-03-21": { name: "Human Rights Day", type: 'official' },
-  "2025-04-18": { name: "Good Friday", type: 'official' },
-  "2025-04-21": { name: "Family Day", type: 'official' },
-  "2025-04-27": { name: "Freedom Day", type: 'official' },
-  "2025-04-28": { name: "Freedom Day (Observed)", type: 'observed' },
-  "2025-05-01": { name: "Workers' Day", type: 'official' },
-  "2025-05-11": { name: "Mother's Day", type: 'cultural' },
-  "2025-06-15": { name: "Father's Day", type: 'cultural' },
-  "2025-06-16": { name: "Youth Day", type: 'official' },
-  "2025-08-09": { name: "National Women's Day", type: 'official' },
-  "2025-08-11": { name: "Women's Day (Observed)", type: 'observed' },
-  "2025-09-01": { name: "Spring Day", type: 'cultural' },
-  "2025-09-24": { name: "Heritage Day", type: 'official' },
-  "2025-10-31": { name: "Halloween", type: 'cultural' },
-  "2025-12-16": { name: "Day of Reconciliation", type: 'official' },
-  "2025-12-25": { name: "Christmas Day", type: 'official' },
-  "2025-12-26": { name: "Day of Goodwill", type: 'official' },
-
-  // --- 2026 ---
   "2026-01-01": { name: "New Year's Day", type: 'official' },
-  "2026-02-14": { name: "Valentine's Day", type: 'cultural' },
   "2026-03-21": { name: "Human Rights Day", type: 'official' },
   "2026-04-03": { name: "Good Friday", type: 'official' },
   "2026-04-06": { name: "Family Day", type: 'official' },
   "2026-04-27": { name: "Freedom Day", type: 'official' },
   "2026-05-01": { name: "Workers' Day", type: 'official' },
-  "2026-05-10": { name: "Mother's Day", type: 'cultural' },
   "2026-06-16": { name: "Youth Day", type: 'official' },
-  "2026-06-21": { name: "Father's Day", type: 'cultural' },
   "2026-08-09": { name: "National Women's Day", type: 'official' },
   "2026-08-10": { name: "Women's Day (Observed)", type: 'observed' },
-  "2026-09-01": { name: "Spring Day", type: 'cultural' },
   "2026-09-24": { name: "Heritage Day", type: 'official' },
-  "2026-10-31": { name: "Halloween", type: 'cultural' },
   "2026-12-16": { name: "Day of Reconciliation", type: 'official' },
   "2026-12-25": { name: "Christmas Day", type: 'official' },
   "2026-12-26": { name: "Day of Goodwill", type: 'official' },
-
-  // --- 2027 ---
-  "2027-01-01": { name: "New Year's Day", type: 'official' },
-  "2027-02-14": { name: "Valentine's Day", type: 'cultural' },
-  "2027-03-21": { name: "Human Rights Day", type: 'official' },
-  "2027-03-22": { name: "Human Rights (Observed)", type: 'observed' },
-  "2027-03-26": { name: "Good Friday", type: 'official' },
-  "2027-03-29": { name: "Family Day", type: 'official' },
-  "2027-04-27": { name: "Freedom Day", type: 'official' },
-  "2027-05-01": { name: "Workers' Day", type: 'official' },
-  "2027-05-09": { name: "Mother's Day", type: 'cultural' },
-  "2027-06-16": { name: "Youth Day", type: 'official' },
-  "2027-06-20": { name: "Father's Day", type: 'cultural' },
-  "2027-08-09": { name: "National Women's Day", type: 'official' },
-  "2027-09-01": { name: "Spring Day", type: 'cultural' },
-  "2027-09-24": { name: "Heritage Day", type: 'official' },
-  "2027-10-31": { name: "Halloween", type: 'cultural' },
-  "2027-12-16": { name: "Day of Reconciliation", type: 'official' },
-  "2027-12-25": { name: "Christmas Day", type: 'official' },
-  "2027-12-26": { name: "Day of Goodwill", type: 'official' },
-  "2027-12-27": { name: "Day of Goodwill (Observed)", type: 'observed' },
 };
 
 const CalendarModule: React.FC<CalendarModuleProps> = ({ 
   events, meetings, team, context, onAddMeeting, onUpdateMeeting, onDeleteMeeting, onJoinMeeting 
 }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Initialize to 2026
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 1));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<Partial<Meeting>>({
     title: '',
-    date: new Date().toISOString().split('T')[0],
+    date: '2026-01-01',
     startTime: '10:00',
     endTime: '11:00',
     type: 'meeting',
@@ -174,7 +106,7 @@ const CalendarModule: React.FC<CalendarModuleProps> = ({
     setEditingMeetingId(null);
     setFormData({
       title: '',
-      date: new Date().toISOString().split('T')[0],
+      date: '2026-01-01',
       startTime: '10:00',
       endTime: '11:00',
       type: 'meeting',
@@ -209,7 +141,7 @@ const CalendarModule: React.FC<CalendarModuleProps> = ({
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-2">Space Calendar</h2>
           <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">
-            Viewing Operational Timeline for {year}. All South African Public Holidays are highlighted in Amber.
+            Viewing Operational Timeline for {year}. System Year Locked: 2026.
           </p>
         </div>
         
@@ -224,7 +156,7 @@ const CalendarModule: React.FC<CalendarModuleProps> = ({
            </div>
            <button 
             onClick={openAddModal}
-            className="bg-brand-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+            className="bg-brand-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-gap-3"
            >
              <Plus size={18} strokeWidth={4} /> Make New Entry
            </button>
@@ -272,12 +204,6 @@ const CalendarModule: React.FC<CalendarModuleProps> = ({
               </div>
               
               <div className="space-y-1 overflow-y-auto max-h-[calc(100%-35px)] custom-scrollbar pr-0.5">
-                {birthdays.map(b => (
-                  <div key={`gift-${b.id}`} className="p-1 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center gap-1.5 animate-pulse">
-                     <Gift size={10} className="text-indigo-600" />
-                     <p className="text-[7px] font-black uppercase text-indigo-900 tracking-tighter italic">Gift from Trackly Pending</p>
-                  </div>
-                ))}
                 {items.map((item: any, idx) => {
                   const isWellness = (item as any).type === 'wellness';
                   return (
@@ -301,52 +227,6 @@ const CalendarModule: React.FC<CalendarModuleProps> = ({
           );
         })}
       </div>
-      
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-xl rounded-[50px] shadow-2xl border-4 border-white overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900">New Entry</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors"><X size={28} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-10 space-y-8">
-              <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entry Type</label>
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-                   {['meeting', 'break', 'wellness'].map(t => (
-                     <button 
-                      key={t} type="button" onClick={() => setFormData({...formData, type: t as any})}
-                      className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === t ? 'bg-brand-primary text-white shadow-xl' : 'text-slate-400'}`}
-                     >
-                       {t}
-                     </button>
-                   ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Log Name</label>
-                 <input 
-                  placeholder="e.g. Afternoon Service Huddle" required className="w-full px-8 py-5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-brand-primary outline-none font-bold text-lg"
-                  value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Target Date</label>
-                  <input type="date" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-black text-sm" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Recurrence</label>
-                  <select className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-black text-[10px] uppercase" value={formData.recurrenceType} onChange={e => setFormData({...formData, isRecurring: e.target.value !== 'none', recurrenceType: e.target.value as any})}>
-                    <option value="none">One-time</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" className="w-full py-6 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-[0.4em] shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">Commit Entry <Save size={20} /></button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { LayoutDashboard, CheckSquare, Users, Mail, Calendar, Clock, LogOut, ShoppingCart, UtensilsCrossed, Zap, ChevronRight, BarChart3, Music, Truck, Ticket, HeartPulse } from 'lucide-react';
-import { AppMode, ProjectContext, UserRole } from '../types';
+// Fix: corrected import path and ensured ProjectContext is not used as a value below
+import { AppMode, ProjectContext, UserRole } from './types';
 
 interface SidebarProps {
   activeTab: string;
@@ -22,7 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', icon: LayoutDashboard, label: 'Pulse' },
     { id: 'tasks', icon: CheckSquare, label: 'Ops Board' },
     { id: 'deliveries', icon: Truck, label: 'Supply Chain' },
-    { id: 'ticketing', icon: Ticket, label: 'Ticketing', context: ProjectContext.SUNDAY_THEORY },
+    // Fix: ProjectContext is a type, replaced with string constant 'b2' (Sunday Theory)
+    { id: 'ticketing', icon: Ticket, label: 'Ticketing', context: 'b2' },
     { id: 'events', icon: Music, label: 'Events' },
     { id: 'insights', icon: BarChart3, label: 'Insights' },
     { id: 'team', icon: Users, label: 'Staff' },
@@ -62,24 +64,30 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="space-y-2 mb-8">
           <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] px-2 mb-3">Operating Context</p>
           <button 
-            onClick={() => setContext(ProjectContext.THE_YARD)}
-            className={`w-full group text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${context === ProjectContext.THE_YARD ? 'bg-white/10 text-white shadow-xl shadow-black/20' : 'hover:bg-white/5'}`}
+            // Fix: ProjectContext is a type, replaced with string constant 'b1' (The Yard)
+            onClick={() => setContext('b1')}
+            className={`w-full group text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${context === 'b1' ? 'bg-white/10 text-white shadow-xl shadow-black/20' : 'hover:bg-white/5'}`}
           >
             <div className="flex items-center gap-2">
-               <div className={`w-2 h-2 rounded-full ${context === ProjectContext.THE_YARD ? 'bg-[#AF431D]' : 'bg-white/20'}`} />
+               {/* Fix: ProjectContext is a type, replaced with string constant 'b1' (The Yard) */}
+               <div className={`w-2 h-2 rounded-full ${context === 'b1' ? 'bg-[#AF431D]' : 'bg-white/20'}`} />
                The Yard
             </div>
-            {context === ProjectContext.THE_YARD && <ChevronRight size={14} className="text-brand-accent" />}
+            {/* Fix: ProjectContext is a type, replaced with string constant 'b1' (The Yard) */}
+            {context === 'b1' && <ChevronRight size={14} className="text-brand-accent" />}
           </button>
           <button 
-            onClick={() => setContext(ProjectContext.SUNDAY_THEORY)}
-            className={`w-full group text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${context === ProjectContext.SUNDAY_THEORY ? 'bg-white/10 text-white shadow-xl shadow-black/20' : 'hover:bg-white/5'}`}
+            // Fix: ProjectContext is a type, replaced with string constant 'b2' (Sunday Theory)
+            onClick={() => setContext('b2')}
+            className={`w-full group text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${context === 'b2' ? 'bg-white/10 text-white shadow-xl shadow-black/20' : 'hover:bg-white/5'}`}
           >
              <div className="flex items-center gap-2">
-               <div className={`w-2 h-2 rounded-full ${context === ProjectContext.SUNDAY_THEORY ? 'bg-[#8B8635]' : 'bg-white/20'}`} />
+               {/* Fix: ProjectContext is a type, replaced with string constant 'b2' (Sunday Theory) */}
+               <div className={`w-2 h-2 rounded-full ${context === 'b2' ? 'bg-[#8B8635]' : 'bg-white/20'}`} />
                Sunday Theory
             </div>
-            {context === ProjectContext.SUNDAY_THEORY && <ChevronRight size={14} className="text-brand-accent" />}
+            {/* Fix: ProjectContext is a type, replaced with string constant 'b2' (Sunday Theory) */}
+            {context === 'b2' && <ChevronRight size={14} className="text-brand-accent" />}
           </button>
         </div>
       </div>

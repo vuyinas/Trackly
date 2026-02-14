@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Event, TicketType, ProjectContext } from '../types';
-import { Ticket, Users, TrendingUp, Activity, Smartphone, Package, ShieldCheck, Zap, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Ticket, Users, TrendingUp, Activity, Smartphone, Package, ShieldCheck, Zap, AlertCircle, ShoppingCart, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface TicketingModuleProps {
@@ -20,9 +20,13 @@ const TicketingModule: React.FC<TicketingModuleProps> = ({ events, context }) =>
     const sold = ticketing.tickets.reduce((acc, t) => acc + t.sold, 0);
     const capacity = ticketing.tickets.reduce((acc, t) => acc + t.capacity, 0);
     const likelyAttendance = Math.round(sold * ticketing.historicalShowRate) + ticketing.walkInEstimate;
-    const maxScenario = sold + ticketing.walkInEstimate + 20; // +20 margin
+    const maxScenario = sold + ticketing.walkInEstimate + 20;
 
-    return { sold, capacity, likelyAttendance, maxScenario, percentFilled: Math.round((sold / capacity) * 100) };
+    const percentFilled = Math.round((sold / capacity) * 100);
+    const isCritical = percentFilled >= 95;
+    const isWarning = percentFilled >= 80 && percentFilled < 95;
+
+    return { sold, capacity, likelyAttendance, maxScenario, percentFilled, isCritical, isWarning };
   }, [ticketing]);
 
   const demandForecast = useMemo(() => {
@@ -47,6 +51,37 @@ const TicketingModule: React.FC<TicketingModuleProps> = ({ events, context }) =>
 
   return (
     <div className="p-12 space-y-12 animate-in fade-in duration-700">
+      {/* REAL-TIME CAPACITY ALERTS */}
+      {stats?.isCritical && (
+        <div className="bg-red-600 p-6 rounded-[35px] text-white shadow-2xl flex items-center justify-between border-4 border-red-500 animate-pulse">
+           <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-red-600 shadow-lg">
+                 <ShieldAlert size={32} />
+              </div>
+              <div>
+                 <h4 className="text-2xl font-black uppercase italic tracking-tighter leading-none mb-1">CRITICAL: Maximum Capacity Trigger</h4>
+                 <p className="text-sm font-bold opacity-80 italic">Ticket sales at {stats.percentFilled}%. Authorize emergency crowd flow protocols immediately.</p>
+              </div>
+           </div>
+           <div className="px-6 py-3 bg-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest">Priority Protocol Active</div>
+        </div>
+      )}
+
+      {stats?.isWarning && !stats?.isCritical && (
+        <div className="bg-amber-500 p-6 rounded-[35px] text-white shadow-xl flex items-center justify-between border-4 border-amber-400">
+           <div className="flex items-center gap-6">
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-md">
+                 <AlertTriangle size={28} />
+              </div>
+              <div>
+                 <h4 className="text-xl font-black uppercase italic tracking-tighter leading-none mb-1">Capacity Review Required</h4>
+                 <p className="text-sm font-bold opacity-90 italic">Event is at {stats.percentFilled}%. Suggested scaling for bar staff and security deployment.</p>
+              </div>
+           </div>
+           <div className="px-6 py-3 bg-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest">Scaling Advisory</div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
@@ -81,9 +116,9 @@ const TicketingModule: React.FC<TicketingModuleProps> = ({ events, context }) =>
             {stats?.sold} <span className="text-xl text-slate-300">/ {stats?.capacity}</span>
           </h3>
           <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-             <div className="bg-brand-primary h-full transition-all duration-1000" style={{ width: `${stats?.percentFilled}%` }} />
+             <div className={`h-full transition-all duration-1000 ${stats?.isCritical ? 'bg-red-500' : stats?.isWarning ? 'bg-amber-500' : 'bg-brand-primary'}`} style={{ width: `${stats?.percentFilled}%` }} />
           </div>
-          <p className="text-[9px] font-bold text-brand-primary uppercase tracking-widest mt-4">{stats?.percentFilled}% Capacity Filled</p>
+          <p className={`text-[9px] font-bold uppercase tracking-widest mt-4 ${stats?.isCritical ? 'text-red-500' : stats?.isWarning ? 'text-amber-500' : 'text-brand-primary'}`}>{stats?.percentFilled}% Capacity Filled</p>
         </div>
 
         <div className="bg-[#1A1A1A] p-10 rounded-[50px] text-white shadow-2xl relative overflow-hidden">

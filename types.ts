@@ -1,13 +1,20 @@
 
-export enum AppMode {
-  TRACKLY = 'trackly',
-  POS = 'pos',
-  KDS = 'kds'
+export interface VipResidencyProtocol {
+  id: string;
+  artistId: string;
+  rider: string[];
+  securityRequired: boolean;
+  transportSchedule: { time: string; from: string; to: string }[];
+  privacyNotes: string;
+  hospitalityGifting: string[];
+  entourageSize: number;
+  assignedRoomNumber?: string;
 }
 
-export enum ProjectContext {
+export enum Sector {
   THE_YARD = 'the-yard',
-  SUNDAY_THEORY = 'sunday-theory'
+  SUNDAY_THEORY = 'sunday-theory',
+  HOTEL = 'hotel'
 }
 
 export enum UserRole {
@@ -15,7 +22,26 @@ export enum UserRole {
   MANAGER = 'manager',
   SERVER = 'server',
   KITCHEN = 'kitchen',
-  BARTENDER = 'bartender'
+  BAR = 'bar',
+  HOUSEKEEPING = 'housekeeping',
+  SECURITY = 'security'
+}
+
+export enum AppMode {
+  TRACKLY = 'trackly',
+  POS = 'pos'
+}
+
+export type ProjectContext = string;
+
+export interface Business {
+  id: string;
+  name: string;
+  prefix: string;
+  primaryColor: string;
+  accentColor: string;
+  themeBg: string;
+  sector: Sector;
 }
 
 export enum PresenceStatus {
@@ -33,43 +59,386 @@ export enum Responsibility {
   TASKS = 'tasks',
   CALENDAR = 'calendar',
   MEETINGS = 'meetings',
-  SUPPLY_CHAIN = 'supply-chain',
-  TICKETING = 'ticketing',
-  EXECUTION = 'execution',
+  DELIVERIES = 'deliveries',
   EVENTS = 'events',
   INSIGHTS = 'insights',
-  REPORTS = 'reports',
+  SOCIAL = 'social',
   STAFF = 'staff',
-  SHIFT_PLANNER = 'shift-planner',
-  WELLNESS = 'wellness',
   PAYROLL = 'payroll',
-  POS = 'pos-terminal',
-  KDS = 'kds',
-  BILLS = 'bills',
-  MENU_MANAGER = 'menu-manager'
+  REPORTS = 'reports',
+  SHIFTS = 'shifts',
+  EXECUTION = 'execution',
+  TICKETING = 'ticketing',
+  INVENTORY = 'inventory',
+  GUEST_LEDGER = 'guest-ledger',
+  HOUSEKEEPING = 'housekeeping',
+  VIP = 'vip',
+  DINING = 'dining',
+  FACILITIES = 'facilities'
 }
 
-export interface UserProfile {
+export interface TeamMember {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   avatar: string;
+  status: PresenceStatus;
+  context: ProjectContext;
   pin: string;
   defaultContext: ProjectContext;
   responsibilities: Responsibility[];
   baseHourlyRate: number;
+  payType: 'hourly' | 'monthly';
+  hoursPerWeek: number;
+  keyRoles: string;
   overtimeMultiplier: number;
   overtimeThreshold: number;
-  birthday?: string; // Format: MM-DD
+  birthday: string;
+  assignedSector: Sector;
+  assignedBusinesses: string[];
+  statusExpiresAt?: string;
 }
 
-export interface TeamMember extends UserProfile {
-  status: PresenceStatus;
+export type UserProfile = TeamMember;
+
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in-progress',
+  REVIEW = 'review',
+  DONE = 'done'
+}
+
+export enum TaskCategory {
+  OPS = 'ops',
+  MARKETING = 'marketing',
+  MAINTENANCE = 'maintenance'
+}
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  assignees: string[];
+  dueDate: string;
+  priority: TaskPriority;
+  category: TaskCategory;
+  isRecurring: boolean;
+  recurrenceType: 'none' | 'daily' | 'weekly' | 'monthly';
   context: ProjectContext;
-  workStartTime?: string;
-  currentTask?: string;
-  statusExpiresAt?: string;
+  progress: number;
+  completedAt?: string;
+  completedBy?: string;
+}
+
+export interface Email {
+  id: string;
+  sender: string;
+  subject: string;
+  receivedAt: string;
+  isResponded: boolean;
+  content: string;
+}
+
+export enum ShiftType {
+  PREP = 'prep',
+  OPENING = 'opening',
+  LUNCH = 'lunch',
+  DINNER = 'dinner',
+  EVENT = 'event',
+  CLOSING = 'closing',
+  SECURITY = 'security',
+  FRONT_DESK = 'front-desk',
+  BREAKFAST = 'breakfast',
+  HOUSEKEEPING = 'housekeeping',
+  KITCHEN = 'kitchen'
+}
+
+export interface Shift {
+  id: string;
+  memberId: string;
+  location: string;
+  types: ShiftType[];
+  startTime: string;
+  endTime: string;
+  context: ProjectContext;
+  requiresTransport: boolean;
+  transportRegion?: string;
+  status: 'active' | 'pending-approval';
+  source: 'manual' | 'ai';
+  approvedBy?: string;
+}
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  context: ProjectContext;
+  stock: number;
+  isHubbly?: boolean;
+  availableToStaff?: boolean;
+  variants?: string[];
+}
+
+export interface OrderItem extends MenuItem {
+  quantity: number;
+  isStaffMeal?: boolean;
+  selectedVariant?: string;
+  modifiers?: string[];
+}
+
+export interface Order {
+  id: string;
+  tableNumber: string;
+  items: OrderItem[];
+  total: number;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'paid';
+  timestamp: string;
+  context: ProjectContext;
+  serverName: string;
+  isStaffOrder?: boolean;
+  paymentMethod?: 'cash' | 'card';
+  kitchenStatus?: 'pending' | 'ready';
+  barStatus?: 'pending' | 'ready';
+  kitchenCollected?: boolean;
+  barCollected?: boolean;
+}
+
+export interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  sold: number;
+  capacity: number;
+}
+
+export interface Performer {
+  id: string;
+  name: string;
+  role: string;
+  arrivalTime: string;
+  performanceStartTime: string;
+  performanceEndTime: string;
+  rider: string[];
+  contact: string;
+  needsAccommodation: boolean;
+  managementEmail?: string;
+  managementPhone?: string;
+}
+
+export enum ChecklistCategory {
+  PRE_EVENT = 'pre-event',
+  DURING_EVENT = 'during-event',
+  POST_EVENT = 'post-event'
+}
+
+export interface ChecklistItem {
+  id: string;
+  task: string;
+  category: ChecklistCategory;
+  department: 'kitchen' | 'bar' | 'office' | 'management';
+  assignedRole: UserRole | 'all';
+  priority: string;
+  targetTime: string;
+  status: 'todo' | 'in-progress' | 'done';
+  autoGenerated?: boolean;
+}
+
+export interface BriefSignature {
+  userId: string;
+  userName: string;
+  signedAt: string;
+}
+
+export interface EventBriefs {
+  kitchen?: string;
+  bar?: string;
+  office?: string;
+  management?: string;
+  signatures?: {
+    kitchen?: BriefSignature;
+    bar?: BriefSignature;
+    office?: BriefSignature;
+    management?: BriefSignature;
+  };
+}
+
+export type OccasionType = 'Birthday' | 'Anniversary' | 'Engagement' | 'Honeymoon' | 'Celebration' | 'Other' | 'None';
+export type CorporateType = 'Strategy' | 'Social' | 'Product Launch' | 'Other';
+
+export interface FAndBDetails {
+  menuType: 'Buffet' | 'A La Carte';
+  billingStrategy: 'Individual Bills' | 'Consolidated';
+  budgetAmount: number;
+  dietaries: string;
+  serviceTimeline: {
+    starters: string;
+    mains: string;
+    desserts: string;
+  };
+}
+
+export interface Event {
+  id: string;
+  name: string;
+  type: 'Performance' | 'Table Reservation' | 'Celebration' | 'Corporate Event' | 'Themed Night';
+  date: string;
+  startTime: string;
+  endTime: string;
+  expectedAttendance: number;
+  location: string;
+  context: ProjectContext;
+  performers?: Performer[];
+  isTicketed: boolean;
+  ticketing?: {
+    tickets: TicketType[];
+    historicalShowRate: number;
+    walkInEstimate: number;
+  };
+  checklists: ChecklistItem[];
+  briefs?: EventBriefs;
+  suggestions?: string[];
+  leadGuest?: {
+    name: string;
+    email: string;
+    phone: string;
+    internalTable: string;
+    occasion: OccasionType;
+    corporateType: CorporateType;
+    dessertWording: string;
+    fAndB: FAndBDetails;
+  };
+}
+
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
+
+export interface AgendaItem {
+  timeBlock: string;
+  objective: string;
+  detail: string;
+  responsible: string;
+}
+
+export interface HiddenConsideration {
+  category: string;
+  item: string;
+  note: string;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description: string;
+  engagementType: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  attendees: string[];
+  agenda?: AgendaItem[];
+  considerations?: HiddenConsideration[];
+  type: 'meeting' | 'break' | 'wellness';
+  context: ProjectContext;
+  joinToken?: string;
+  notes?: string;
+  liveNotes?: string[];
+  isRecurring: boolean;
+  recurrenceType: RecurrenceType;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  timestamp: string;
+  status: 'sent' | 'delivered' | 'read';
+}
+
+export enum DeliveryCategory {
+  KITCHEN = 'kitchen',
+  BAR = 'bar',
+  OFFICE = 'office'
+}
+
+export interface OrderLineItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  currentStock: number;
+  suggestedQty: number;
+  priceAtOrder: number;
+}
+
+export interface ProcurementOrder {
+  id: string;
+  supplierId: string;
+  category: DeliveryCategory;
+  dispatchDate: string;
+  expectedDate: string;
+  expectedTime: string;
+  items: OrderLineItem[];
+  deliveryFee: number;
+  totalCost: number;
+  status: 'pending' | 'ordered' | 'delayed' | 'delivered';
+  context: ProjectContext;
+  createdBy: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  category: DeliveryCategory;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+  reliability: number;
+  avgLeadTime: string;
+  catalog: {
+    id: string;
+    name: string;
+    price: number;
+    unit: string;
+  }[];
+}
+
+export interface Feedback {
+  id: string;
+  source: string;
+  category: string;
+  severity: 'low' | 'medium' | 'high';
+  comment: string;
+  handle: string;
+  resolved: boolean;
+  timestamp: string;
+  isPhysicalFeedback?: boolean;
+}
+
+export enum SocialPlatform {
+  INSTAGRAM = 'instagram',
+  FACEBOOK = 'facebook',
+  TIKTOK = 'tiktok',
+  TWITTER = 'twitter',
+  LINKEDIN = 'linkedin',
+  YOUTUBE = 'youtube',
+  WEBSITE = 'website'
+}
+
+export interface SocialLink {
+  id: string;
+  platform: SocialPlatform;
+  url: string;
+  followers?: number;
+  postsCount?: number;
+  topPosts?: {
+    title: string;
+    reach: number;
+    engagement: number;
+  }[];
 }
 
 export interface PayrollRecord {
@@ -82,238 +451,86 @@ export interface PayrollRecord {
   grossPay: number;
   deductions: number;
   netPay: number;
-  status: 'pending' | 'processed' | 'paid';
+  status: 'pending' | 'paid';
 }
 
-export enum ShiftType {
-  PREP = 'prep',
-  PRE_DUTY = 'pre-duty',
-  LUNCH = 'lunch',
-  DINNER = 'dinner',
-  EVENT = 'event',
-  CLOSING = 'closing'
-}
+export type RoomStatusType = 'vacant-clean' | 'vacant-dirty' | 'occupied' | 'maintenance' | 'blocker';
 
-export enum DeliveryCategory {
-  KITCHEN = 'kitchen',
-  BAR = 'bar',
-  OFFICE = 'office'
-}
-
-export enum ChecklistCategory {
-  PRE_EVENT = 'pre-event',
-  EVENT_DAY_BEFORE = 'event-day-before',
-  DURING_EVENT = 'during-event',
-  POST_EVENT = 'post-event'
-}
-
-export interface ChecklistItem {
+export interface Room {
   id: string;
-  task: string;
-  category: ChecklistCategory;
-  department: DeliveryCategory | 'host' | 'general';
-  status: 'todo' | 'in-progress' | 'done';
-  timeAnchor?: string;
-  autoGenerated: boolean;
+  roomNumber: string;
+  type: 'The Nest' | 'The Haven' | 'The Residence' | 'The Sanctuary';
+  floor: number;
+  status: RoomStatusType;
+  isVipRoom: boolean;
+  miniBarStatus: 'full' | 'low' | 'empty';
 }
 
-export interface SupplierItem {
+export interface Booking {
   id: string;
-  name: string;
-  price: number;
-  unit: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  checkIn: string;
+  checkOut: string;
+  pax: number;
+  source: string;
+  isVip: boolean;
+  dietaryNotes: string;
+  specialRequests: string;
+  hasBreakfast: boolean;
+  hasDinner: boolean;
+  occasion: OccasionType;
+  roomId?: string;
+  internalTable?: string;
+  welcomePackAssigned?: boolean;
+  paymentStatus?: 'pending' | 'paid';
 }
 
-export interface Supplier {
+export interface HousekeepingTask {
   id: string;
-  name: string;
-  category: DeliveryCategory;
-  contact: string;
-  reliability: number;
-  avgLeadTime: string;
-  catalog: SupplierItem[];
+  roomId: string;
+  assignedTo: string;
+  type: 'stay-over' | 'check-out' | 'deep-clean';
+  status: 'pending' | 'in-progress' | 'inspected';
+  checklist?: string[];
+  brief?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
-export interface OrderLineItem {
-  name: string;
-  quantity: number;
-  unit: string;
-  currentStock: number;
-  suggestedQty: number;
-  priceAtOrder?: number;
-}
-
-export interface ProcurementOrder {
-  id: string;
-  supplierId: string;
-  category: DeliveryCategory;
-  items: OrderLineItem[];
-  status: 'suggested' | 'ordered' | 'confirmed' | 'delivered' | 'delayed';
-  dispatchDate?: string;
-  expectedDate: string;
-  expectedTime?: string;
-  leadTimeDays?: number;
-  totalCost: number;
-  deliveryFee: number;
-  context: ProjectContext;
-  createdBy: string;
-  suggestionReason?: string;
-}
-
-export interface TicketType {
-  id: string;
-  name: string;
-  price: number;
-  sold: number;
-  capacity: number;
-  type: 'early-bird' | 'general' | 'vip' | 'complimentary';
-}
-
-export interface EventTicketing {
-  eventId: string;
-  tickets: TicketType[];
-  scannedCount: number;
-  historicalShowRate: number;
-  walkInEstimate: number;
-}
-
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in-progress',
-  REVIEW = 'review',
-  DONE = 'done'
-}
-
-export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TaskCategory = 'ops' | 'events' | 'pos' | 'kitchen' | 'bar' | 'admin' | 'maintenance' | 'marketing' | 'other';
-export type RecurrenceType = 'none' | 'weekly' | 'monthly' | 'custom';
-
-export interface Task {
+export interface MaintenanceTicket {
   id: string;
   title: string;
-  description: string;
-  status: TaskStatus;
-  assignees: string[];
-  reviewerId?: string; 
-  dueDate: string;
+  category: 'plumbing' | 'electrical' | 'hvac' | 'pool' | 'garden' | 'general';
   priority: TaskPriority;
+  status: 'todo' | 'in-progress' | 'done';
+  dueDate: string;
   isRecurring: boolean;
-  recurrenceType: RecurrenceType;
-  context: ProjectContext;
-  progress: number;
-  category: TaskCategory;
-  linkedEventId?: string;
-  linkedMenuItemId?: string;
-  dependencies?: string[];
-  estimatedMinutes?: number;
-  attachmentUrl?: string;
-  attachmentName?: string;
-  projectNotes?: string;
-  submissionNotes?: string;
 }
 
-export interface MenuItem {
+export interface IncidentReport {
   id: string;
-  name: string;
-  price: number;
-  category: string;
-  stock: number;
-  context: ProjectContext;
-  isHubbly?: boolean;
-  variants?: string[];
-  availableToStaff?: boolean;
-}
-
-export interface OrderItem extends MenuItem {
-  quantity: number;
-  selectedVariant?: string;
-  modifiers?: string[];
-  isStaffMeal?: boolean;
-}
-
-export interface Order {
-  id: string;
-  tableNumber: string;
-  items: OrderItem[];
-  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'paid';
-  total: number;
-  serverName: string;
-  timestamp: string;
-  context: ProjectContext;
-  isStaffOrder?: boolean;
-}
-
-export interface Performer {
-  id: string;
-  name: string;
-  role: 'band' | 'solo' | 'dj' | 'spoken-word';
-  arrivalTime: string;
-  performanceTime: string;
-  rider: string[];
-  contact: string;
-  tableAssignment?: string;
-}
-
-export interface Event {
-  id: string;
-  name: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  performers: Performer[];
-  expectedAttendance: number;
   type: string;
-  ticketing?: EventTicketing;
-  checklists: ChecklistItem[];
-  acknowledgedBy: string[];
-  context: ProjectContext;
-  location: string;
-}
-
-export interface Meeting {
-  id: string;
-  title: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  attendees: string[];
-  context: ProjectContext;
-  notes?: string;
-  type: 'meeting' | 'break' | 'wellness';
-  isRecurring?: boolean;
-  recurrenceType?: RecurrenceType;
-  parentId?: string;
-}
-
-export interface Feedback {
-  id: string;
-  source: 'staff' | 'customer' | 'wifi';
-  category: 'food' | 'service' | 'pricing' | 'music' | 'seating';
-  severity: 'low' | 'medium' | 'high';
-  comment: string;
-  resolved: boolean;
+  description: string;
+  status: 'open' | 'resolved';
   timestamp: string;
 }
 
-export interface Email {
+export interface CrossDomainSignal {
   id: string;
-  sender: string;
-  subject: string;
-  receivedAt: string;
-  isResponded: boolean;
-  urgency: number;
-}
-
-export interface Shift {
-  id: string;
-  memberId: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  context: ProjectContext;
-  type: ShiftType;
-  requiresTransport?: boolean;
-  transportRegion?: string;
+  sourceSector: Sector;
+  targetSector: Sector;
+  type: 'artist-booking';
+  acknowledged: boolean;
+  payload: {
+    artistName: string;
+    eventDate: string;
+    rider?: string[];
+    sourceBrand?: string;
+    managementEmail?: string;
+    managementPhone?: string;
+  };
 }
 
 export interface StockDelivery {
@@ -322,7 +539,7 @@ export interface StockDelivery {
   supplier: string;
   expectedAt: string;
   category: DeliveryCategory;
-  createdBy: string;
   status: 'pending' | 'received' | 'delayed' | 'cancelled';
   context: ProjectContext;
+  createdBy: string;
 }

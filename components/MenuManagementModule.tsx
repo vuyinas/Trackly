@@ -29,16 +29,24 @@ const MenuManagementModule: React.FC<MenuManagementModuleProps> = ({ menu, conte
 
   const [newVariant, setNewVariant] = useState('');
 
-  const categories = [
-    'Starters', 
-    'Main', 
-    'Desserts', 
-    'Sides', 
-    'Drinks', 
-    'Family Sharing', 
-    'Kids Meals', 
-    'Hubbly'
-  ];
+  // Dynamically filter categories based on context (h1 = T3S)
+  const categories = useMemo(() => {
+    const base = [
+      'Starters', 
+      'Main', 
+      'Desserts', 
+      'Sides', 
+      'Drinks', 
+      'Family Sharing', 
+      'Kids Meals', 
+      'Hubbly'
+    ];
+    // h1 is the ID for T3S (The THIRD Space)
+    if (context === 'h1') {
+      return base.filter(cat => cat !== 'Family Sharing' && cat !== 'Hubbly');
+    }
+    return base;
+  }, [context]);
 
   const filteredMenu = useMemo(() => {
     return menu.filter(item => 
@@ -96,7 +104,9 @@ const MenuManagementModule: React.FC<MenuManagementModuleProps> = ({ menu, conte
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-4">Menu Lab</h2>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Architecting the catalog for {context === ProjectContext.THE_YARD ? 'The Yard' : 'Sunday Theory'}.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">
+             Architecting the catalog for {context === 'h1' ? 'The THIRD Space' : context === 'b1' ? 'The Yard' : 'Sunday Theory'}.
+          </p>
         </div>
         <button 
           onClick={() => { resetForm(); setIsAdding(true); }}

@@ -10,7 +10,6 @@
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
       
       :root {
-        /* Trackly System Neutral (Default) */
         --brand-primary: #525252;
         --brand-accent: #E9C891;
         --brand-bg: #F4F2F0;
@@ -37,16 +36,29 @@
         background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: var(--brand-accent);
+        background: var(--brand-primary);
         opacity: 0.3;
         border-radius: 10px;
       }
       
-      .bg-brand-primary { background-color: var(--brand-primary); }
-      .text-brand-primary { color: var(--brand-primary); }
-      .border-brand-primary { border-color: var(--brand-primary); }
-      .bg-brand-accent { background-color: var(--brand-accent); }
-      .text-brand-accent { color: var(--brand-accent); }
+      /* Dynamic Brand Utilities */
+      .bg-brand-primary { background-color: var(--brand-primary) !important; }
+      .text-brand-primary { color: var(--brand-primary) !important; }
+      .border-brand-primary { border-color: var(--brand-primary) !important; }
+      .bg-brand-accent { background-color: var(--brand-accent) !important; }
+      .text-brand-accent { color: var(--brand-accent) !important; }
+      .ring-brand-primary { --tw-ring-color: var(--brand-primary) !important; }
+      
+      .hover\:bg-brand-primary:hover { background-color: var(--brand-primary) !important; }
+      .hover\:text-brand-primary:hover { color: var(--brand-primary) !important; }
+
+      @keyframes loading-bar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      .animate-loading-bar {
+        animation: loading-bar 2s infinite linear;
+      }
     </style>
   <script type="importmap">
 {

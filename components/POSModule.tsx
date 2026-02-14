@@ -1,23 +1,36 @@
 
 import React, { useState, useMemo } from 'react';
-import { MenuItem, OrderItem, ProjectContext, Order } from '../types';
-import { Search, Plus, Minus, CreditCard, Banknote, Trash2, Zap, ShoppingCart, Coffee, Utensils, ChevronRight, X, Layers, UserCheck } from 'lucide-react';
+import { MenuItem, OrderItem, ProjectContext, Order, Business } from '../types';
+import { Search, Plus, Minus, ShoppingBag, Utensils, ChevronRight, X, Layers, UserCheck, Zap, Bed, Store } from 'lucide-react';
 
 interface POSModuleProps {
   menu: MenuItem[];
   context: ProjectContext;
+  activeBusiness: Business;
   onPlaceOrder: (order: Partial<Order>) => void;
+  orders?: Order[];
 }
 
-const POSModule: React.FC<POSModuleProps> = ({ menu, context, onPlaceOrder }) => {
+const POSModule: React.FC<POSModuleProps> = ({ menu, context, activeBusiness, onPlaceOrder, orders = [] }) => {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
   const [tableNumber, setTableNumber] = useState('');
+  const [orderType, setOrderType] = useState<'restaurant' | 'room-service'>('restaurant');
   const [isStaffMode, setIsStaffMode] = useState(false);
   
-  // Variant Selection State
-  const [activeVariantItem, setActiveVariantItem] = useState<MenuItem | null>(null);
+  const [activeConfigItem, setActiveConfigItem] = useState<MenuItem | null>(null);
+  const [configVariant, setConfigVariant] = useState<string>('');
+  const [configModifiers, setConfigModifiers] = useState<string>('');
+
+  const prefix = activeBusiness?.prefix || 'XX';
+  // Updated prefix logic: RS for Room Service, otherwise the business prefix (TY, ST, T3S)
+  const displayPrefix = orderType === 'room-service' ? 'RS' : prefix;
+  const fullTableId = isStaffMode ? 'STAFF' : `${displayPrefix}-${tableNumber}`;
+
+  const hasOpenBill = useMemo(() => {
+    return orders.some(o => o.tableNumber === fullTableId && o.context === context && o.status !== 'paid');
+  }, [orders, fullTableId, context]);
 
   const filteredMenu = useMemo(() => {
     return menu.filter(item => {
@@ -25,58 +38,39 @@ const POSModule: React.FC<POSModuleProps> = ({ menu, context, onPlaceOrder }) =>
       const matchCategory = category === 'All' || item.category === category;
       const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStaff = isStaffMode ? item.availableToStaff : true;
-      
       return matchContext && matchCategory && matchSearch && matchStaff;
     });
   }, [menu, context, category, searchTerm, isStaffMode]);
 
   const categories = useMemo(() => {
     const base = ['All', 'Starters', 'Main', 'Desserts', 'Sides', 'Drinks', 'Family Sharing', 'Kids Meals', 'Hubbly'];
-    const presentCats = new Set(menu.filter(i => {
-      const matchContext = i.context === context;
-      const matchStaff = isStaffMode ? i.availableToStaff : true;
-      return matchContext && matchStaff;
-    }).map(i => i.category));
+    const presentCats = new Set(menu.filter(i => i.context === context).map(i => i.category));
     return base.filter(cat => cat === 'All' || presentCats.has(cat));
-  }, [menu, context, isStaffMode]);
+  }, [menu, context]);
 
-  const addToCart = (item: MenuItem, selectedVariant?: string) => {
+  const addToCart = (item: MenuItem, variant?: string, modifiersStr?: string) => {
+    const modifiers = modifiersStr ? modifiersStr.split(',').map(m => m.trim()).filter(m => m !== '') : [];
     setCart(prev => {
-      const existing = prev.find(i => i.id === item.id && i.selectedVariant === selectedVariant);
+      const existing = prev.find(i => 
+        i.id === item.id && i.selectedVariant === variant && JSON.stringify(i.modifiers) === JSON.stringify(modifiers)
+      );
       if (existing) {
-        return prev.map(i => (i.id === item.id && i.selectedVariant === selectedVariant) ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => (i.id === item.id && i.selectedVariant === variant && JSON.stringify(i.modifiers) === JSON.stringify(modifiers)) 
+          ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { ...item, quantity: 1, isStaffMeal: isStaffMode, selectedVariant }];
+      return [...prev, { ...item, quantity: 1, isStaffMeal: isStaffMode, selectedVariant: variant, modifiers }];
     });
-    setActiveVariantItem(null);
+    setActiveConfigItem(null);
+    setConfigVariant('');
+    setConfigModifiers('');
   };
-
-  const handleItemClick = (item: MenuItem) => {
-    if (item.variants && item.variants.length > 0) {
-      setActiveVariantItem(item);
-    } else {
-      addToCart(item);
-    }
-  };
-
-  const updateQty = (id: string, delta: number, variant?: string) => {
-    setCart(prev => prev.map(i => {
-      if (i.id === id && i.selectedVariant === variant) {
-        const newQty = Math.max(0, i.quantity + delta);
-        return { ...i, quantity: newQty };
-      }
-      return i;
-    }).filter(i => i.quantity > 0));
-  };
-
-  const total = useMemo(() => isStaffMode ? 0 : cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart, isStaffMode]);
 
   const handleFireOrder = () => {
     if (cart.length === 0 || (!tableNumber && !isStaffMode)) return;
     onPlaceOrder({
-      tableNumber: isStaffMode ? 'STAFF' : tableNumber,
+      tableNumber: fullTableId,
       items: cart,
-      total,
+      total: isStaffMode ? 0 : cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       status: 'pending',
       timestamp: new Date().toISOString(),
       context,
@@ -88,43 +82,47 @@ const POSModule: React.FC<POSModuleProps> = ({ menu, context, onPlaceOrder }) =>
   };
 
   return (
-    <div className="flex h-[calc(100vh-73px)] overflow-hidden bg-slate-100 relative">
+    <div className="flex h-[calc(100vh-73px)] overflow-hidden bg-slate-100">
       <div className="flex-1 flex flex-col border-r border-slate-200">
         <div className="p-4 bg-white border-b border-slate-200 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex bg-slate-100 p-1 rounded-2xl">
               <button 
-                onClick={() => { setIsStaffMode(false); setCategory('All'); }}
-                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isStaffMode ? 'bg-white shadow-sm text-brand-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                onClick={() => { setIsStaffMode(false); setOrderType('restaurant'); }}
+                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isStaffMode && orderType === 'restaurant' ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400'}`}
               >
-                Standard Bill
+                Restaurant
               </button>
+              {activeBusiness.sector === 'hotel' && (
+                <button 
+                  onClick={() => { setIsStaffMode(false); setOrderType('room-service'); }}
+                  className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isStaffMode && orderType === 'room-service' ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400'}`}
+                >
+                  Room Service
+                </button>
+              )}
               <button 
-                onClick={() => { setIsStaffMode(true); setCategory('All'); }}
-                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isStaffMode ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                onClick={() => setIsStaffMode(true)}
+                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isStaffMode ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400'}`}
               >
-                <UserCheck size={14} /> Staff Allocation
+                <UserCheck size={14} /> Staff
               </button>
             </div>
             
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
               <input 
-                type="text" 
-                placeholder="Search active menu..."
+                type="text" placeholder="Search menu..."
                 className="pl-9 pr-4 py-2.5 bg-slate-100 rounded-xl text-xs outline-none w-64 focus:ring-2 focus:ring-brand-primary/20 font-bold"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
           
           <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
             {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${category === cat ? 'bg-brand-primary text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+              <button key={cat} onClick={() => setCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === cat ? 'bg-brand-primary text-white shadow-lg' : 'bg-slate-100 text-slate-500'}`}
               >
                 {cat}
               </button>
@@ -132,126 +130,102 @@ const POSModule: React.FC<POSModuleProps> = ({ menu, context, onPlaceOrder }) =>
           </div>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto grid grid-cols-2 xl:grid-cols-4 gap-6 content-start">
+        <div className="flex-1 p-6 overflow-y-auto grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
           {filteredMenu.map(item => (
-            <button 
-              key={item.id}
-              onClick={() => handleItemClick(item)}
-              className="bg-white p-6 rounded-[35px] shadow-sm border-2 border-slate-50 hover:border-brand-primary/20 transition-all active:scale-95 flex flex-col justify-between h-48 relative group"
+            <button key={item.id} onClick={() => setActiveConfigItem(item)}
+              className="bg-white p-6 rounded-[35px] shadow-sm border-2 border-slate-50 hover:border-brand-primary transition-all active:scale-95 flex flex-col justify-between h-48 relative group"
             >
-              {item.variants && item.variants.length > 0 && (
-                <div className="absolute top-4 right-4 p-2 bg-brand-primary/5 text-brand-primary rounded-xl opacity-50 group-hover:opacity-100 transition-opacity">
-                   <Layers size={14} />
-                </div>
-              )}
+              <div className="absolute top-4 right-4 p-2 bg-brand-primary/5 text-brand-primary rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                 <Plus size={14} />
+              </div>
               <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.category}</p>
                 <h4 className="font-black text-slate-800 leading-tight text-base tracking-tight">{item.name}</h4>
               </div>
-              <div className="flex items-end justify-between">
-                <p className="text-lg font-black italic text-slate-900">R{item.price.toFixed(2)}</p>
-                <span className="text-[10px] font-bold text-slate-400">{item.stock} BOH</span>
-              </div>
+              <p className="text-lg font-black italic text-slate-900">R{item.price.toFixed(2)}</p>
             </button>
           ))}
-          {filteredMenu.length === 0 && (
-            <div className="col-span-full py-20 text-center opacity-30 flex flex-col items-center justify-center gap-4">
-              <Zap size={48} />
-              <p className="font-black uppercase tracking-[0.2em] text-xs">No items found for this selection</p>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className={`w-[450px] flex flex-col shadow-2xl transition-all ${isStaffMode ? 'bg-[#0F172A] text-white' : 'bg-white'}`}>
+      <div className={`w-[450px] flex flex-col shadow-2xl ${isStaffMode ? 'bg-[#28374a] text-white' : 'bg-white'}`}>
         <div className={`p-8 border-b ${isStaffMode ? 'border-white/5' : 'border-slate-100'}`}>
-           <h3 className={`text-3xl font-black tracking-tighter uppercase italic mb-8 ${isStaffMode ? 'text-brand-primary' : 'text-slate-800'}`}>
-              {isStaffMode ? 'Staff Allocation' : 'Guest Bill'}
+           <h3 className="text-3xl font-black tracking-tighter uppercase italic mb-8">
+              {isStaffMode ? 'Staff Allocation' : orderType === 'room-service' ? 'Room Account' : 'Guest Bill'}
            </h3>
-           {!isStaffMode ? (
-             <div className="relative">
-                <Utensils className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input 
-                  type="text" placeholder="Table No."
-                  className="w-full pl-14 pr-6 py-5 bg-slate-100 rounded-[25px] font-black text-2xl border-2 border-transparent focus:border-brand-accent outline-none text-slate-900"
-                  value={tableNumber} onChange={e => setTableNumber(e.target.value)}
-                />
-             </div>
-           ) : (
-             <div className="flex items-center gap-5 bg-white/5 p-6 rounded-[30px] border border-white/50">
-                <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center text-white"><Coffee size={32} /></div>
-                <p className="text-xl font-black text-white italic tracking-tight">Personnel Consumption Log</p>
-             </div>
-           )}
+           <div className="relative group">
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 group-focus-within:text-brand-primary">
+                {orderType === 'room-service' ? <Bed size={20} /> : <Utensils size={20} />}
+                <span className="font-black text-xl italic">{displayPrefix}-</span>
+              </div>
+              <input 
+                type="number" placeholder="00"
+                className="w-full pl-24 pr-6 py-5 bg-slate-100 rounded-[25px] font-black text-3xl border-2 border-transparent focus:border-brand-primary outline-none text-slate-900"
+                value={tableNumber} onChange={e => setTableNumber(e.target.value)}
+              />
+           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+        <div className="flex-1 overflow-y-auto p-8 space-y-4">
           {cart.map((item, idx) => (
-            <div key={`${item.id}-${item.selectedVariant || 'none'}`} className={`flex items-center gap-5 p-5 rounded-[30px] border ${isStaffMode ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200/50'}`}>
+            <div key={idx} className={`flex items-center gap-5 p-5 rounded-[30px] border ${isStaffMode ? 'bg-white/5 border-white/5' : 'bg-slate-50 shadow-sm border-slate-200'}`}>
               <div className="flex-1 min-w-0">
                 <h5 className="text-base font-black tracking-tight truncate">{item.name}</h5>
-                {item.selectedVariant && (
-                  <p className="text-[10px] font-black uppercase text-brand-primary mt-1 flex items-center gap-1 italic">
-                    <ChevronRight size={10} /> {item.selectedVariant}
-                  </p>
-                )}
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">R{item.price.toFixed(2)} ea.</p>
+                {item.selectedVariant && <p className="text-[9px] font-black uppercase text-brand-primary italic">{item.selectedVariant}</p>}
               </div>
               <div className="flex items-center gap-4">
-                <button onClick={() => updateQty(item.id, -1, item.selectedVariant)} className="p-1.5 hover:text-brand-primary"><Minus size={18} /></button>
+                <button onClick={() => setCart(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(0, it.quantity - 1) } : it).filter(it => it.quantity > 0))} className="p-2 bg-white rounded-xl shadow-sm"><Minus size={14} /></button>
                 <span className="text-lg font-black">{item.quantity}</span>
-                <button onClick={() => updateQty(item.id, 1, item.selectedVariant)} className="p-1.5 hover:text-brand-primary"><Plus size={18} /></button>
+                <button onClick={() => setCart(prev => prev.map((it, i) => i === idx ? { ...it, quantity: it.quantity + 1 } : it))} className="p-2 bg-white rounded-xl shadow-sm"><Plus size={14} /></button>
               </div>
             </div>
           ))}
-          {cart.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-10"><ShoppingCart size={80} /><p className="font-black uppercase tracking-widest text-xs mt-4">Empty Cart</p></div>}
         </div>
 
-        <div className={`p-8 space-y-6 border-t ${isStaffMode ? 'bg-black/40 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-          {!isStaffMode && (
-            <div className="flex justify-between items-center text-3xl font-black text-slate-900 tracking-tighter italic">
-              <span>TOTAL DUE</span><span>R{(total * 1.15).toFixed(2)}</span>
-            </div>
-          )}
+        <div className="p-8 space-y-6 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex justify-between items-center text-3xl font-black text-slate-900 tracking-tighter italic">
+            <span>TOTAL</span><span>R{cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2)}</span>
+          </div>
           <button 
             onClick={handleFireOrder}
-            disabled={cart.length === 0 || (!tableNumber && !isStaffMode)}
-            className={`w-full py-7 rounded-[30px] font-black text-xl uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-2xl transition-all disabled:opacity-50 ${isStaffMode ? 'bg-brand-primary text-white' : 'bg-brand-accent text-[#1A1A1A]'}`}
+            disabled={cart.length === 0 || !tableNumber}
+            className="w-full py-7 bg-brand-primary text-white rounded-[30px] font-black text-xl uppercase tracking-[0.2em] shadow-2xl disabled:opacity-50 transition-all flex items-center justify-center gap-3"
           >
-            <Zap fill="currentColor" size={28} /> {isStaffMode ? 'Log To Personnel' : 'Fire Kitchen'}
+            <Zap fill="currentColor" size={24} /> Dispatch Order
           </button>
         </div>
       </div>
 
-      {/* Variant Selection Modal */}
-      {activeVariantItem && (
+      {activeConfigItem && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
-           <div className="bg-white w-full max-w-lg rounded-[60px] shadow-2xl border border-white/50 overflow-hidden animate-in zoom-in-95 duration-200">
+           <div className="bg-white w-full max-w-lg rounded-[60px] shadow-2xl border border-white/50 overflow-hidden animate-in zoom-in-95">
               <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                 <div>
-                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">{activeVariantItem.name}</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Select Specific Option</p>
+                 <h3 className="text-2xl font-black italic tracking-tighter uppercase">{activeConfigItem.name}</h3>
+                 <button onClick={() => setActiveConfigItem(null)} className="p-3 hover:bg-slate-100 rounded-full"><X size={24} /></button>
+              </div>
+              <div className="p-10 space-y-8">
+                 {activeConfigItem.variants && activeConfigItem.variants.length > 0 && (
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Variant</label>
+                      <div className="grid grid-cols-2 gap-3">
+                         {activeConfigItem.variants.map((v, idx) => (
+                           <button key={idx} onClick={() => setConfigVariant(v)}
+                            className={`p-4 rounded-2xl font-black text-xs uppercase border-2 transition-all ${configVariant === v ? 'bg-brand-primary border-brand-primary text-white shadow-lg' : 'bg-slate-50 border-transparent text-slate-500'}`}
+                           >
+                             {v}
+                           </button>
+                         ))}
+                      </div>
+                   </div>
+                 )}
+                 <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Notes / Exclusions</label>
+                    <input className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-brand-primary outline-none font-bold shadow-inner" value={configModifiers} onChange={e => setConfigModifiers(e.target.value)} placeholder="e.g. No onions" />
                  </div>
-                 <button onClick={() => setActiveVariantItem(null)} className="p-3 hover:bg-slate-100 rounded-2xl transition-colors"><X size={24} /></button>
-              </div>
-              <div className="p-10 grid grid-cols-1 gap-4">
-                 {activeVariantItem.variants?.map((v, idx) => (
-                   <button 
-                    key={idx}
-                    onClick={() => addToCart(activeVariantItem, v)}
-                    className="w-full p-6 bg-slate-50 hover:bg-brand-primary hover:text-white rounded-[30px] border-2 border-transparent transition-all text-left flex items-center justify-between group"
-                   >
-                     <span className="text-lg font-black uppercase italic tracking-tight">{v}</span>
-                     <ChevronRight size={20} className="text-slate-200 group-hover:text-white transition-all" />
-                   </button>
-                 ))}
-              </div>
-              <div className="p-8 bg-slate-50 border-t border-slate-100">
-                <button 
-                  onClick={() => addToCart(activeVariantItem)}
-                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600"
-                >
-                  Skip / Default Option
+                 <button onClick={() => addToCart(activeConfigItem, configVariant, configModifiers)}
+                  className="w-full py-5 bg-brand-primary text-white rounded-[30px] font-black uppercase tracking-[0.2em] shadow-xl"
+                 >
+                  Add To Order
                 </button>
               </div>
            </div>
